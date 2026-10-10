@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我的極簡多益單字卡</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f2f4f7; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
+    .container { width: 100%; max-width: 420px; }
+    
+    .settings-bar { display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px 16px; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); font-size: 14px; font-weight: bold; color: #4a5568; }
+    .switch-container { display: flex; align-items: center; gap: 8px; }
+    .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e0; transition: .3s; border-radius: 24px; }
+    .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+    input:checked + .slider { background-color: #5B7B9A; }
+    input:checked + .slider:before { transform: translateX(20px); }
+
+    .tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+    .tab-btn { flex: 1; padding: 10px 0; border: none; background: #e2e8f0; border-radius: 8px; font-weight: bold; cursor: pointer; color: #4a5568; font-size: 13px; transition: 0.2s; }
+    .tab-btn.active { background: #5B7B9A; color: white; box-shadow: 0 2px 6px rgba(91, 123, 154, 0.3); }
+
+    .card { background: white; border-radius: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.06); padding: 24px; text-align: center; position: relative; }
+
+    .status-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; margin-bottom: 8px; }
+    .badge-easy { background: #e6f4ea; color: #2e7d32; }
+    .badge-review { background: #fef7e0; color: #b78103; }
+    .badge-hard { background: #fce8e6; color: #c62828; }
+
+    .word-container { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 20px 0 16px 0; }
+    .word-title { font-size: 36px; font-weight: bold; color: #2d3748; margin: 0; }
+    
+    .audio-btn-inline { background: #f7fafc; color: #5B7B9A; border: 1.5px solid #e2e8f0; width: 36px; height: 36px; border-radius: 50%; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .audio-btn-inline:hover { background: #edf2f7; border-color: #cbd5e0; }
+    .audio-btn-inline:active { transform: scale(0.92); background: #e2e8f0; }
+
+    .toggle-chinese-btn { background: #f0f7f7; border: 1.5px dashed #a3c4c4; width: 100%; padding: 12px; border-radius: 12px; font-weight: bold; color: #437070; cursor: pointer; margin-top: 8px; font-size: 14px; transition: 0.2s; }
+    .toggle-chinese-btn:active { background: #e1f0f0; }
+
+    .details-box { display: none; text-align: left; margin-top: 16px; padding-top: 16px; border-top: 1px solid #e2e8f0; }
+    .pos-meaning { font-size: 18px; color: #c53030; font-weight: bold; margin-bottom: 12px; }
+    .example-box { background: #f7fafc; border-left: 4px solid #5B7B9A; padding: 12px; border-radius: 4px; }
+    .ex-en { font-weight: 600; color: #2d3748; font-size: 15px; margin-bottom: 4px; }
+    .ex-zh { color: #718096; font-size: 14px; }
+
+    .difficulty-group { display: flex; gap: 8px; margin-top: 20px; }
+    .diff-btn { flex: 1; padding: 10px 0; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 13px; }
+    .btn-review { background: #feefc3; color: #8c5000; }
+    .btn-hard { background: #fad2cf; color: #a50e0e; }
+    .btn-easy { background: #ceead6; color: #0d652d; }
+
+    .nav-btn { background: #5B7B9A; color: white; border: none; padding: 14px; border-radius: 12px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; margin-top: 16px; box-shadow: 0 4px 12px rgba(91, 123, 154, 0.25); transition: 0.2s; }
+    .nav-btn:active { background: #4A6782; transform: scale(0.99); }
+    
+    .reset-btn { background: transparent; border: none; color: #a0aec0; text-decoration: underline; font-size: 12px; margin-top: 12px; cursor: pointer; width: 100%; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="settings-bar">
+    <span>🔊 語音播放模式</span>
+    <div class="switch-container">
+      <span id="toggleText">自動播放</span>
+      <label class="switch">
+        <input type="checkbox" id="autoPlayToggle" checked onchange="toggleAutoPlayText()">
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button id="tab-all" class="tab-btn active" onclick="selectTab('all')">全部 (<span id="cnt-all">0</span>)</button>
+    <button id="tab-review" class="tab-btn" onclick="selectTab('review')">再次複習 (<span id="cnt-review">0</span>)</button>
+    <button id="tab-hard" class="tab-btn" onclick="selectTab('hard')">困難 (<span id="cnt-hard">0</span>)</button>
+    <button id="tab-easy" class="tab-btn" onclick="selectTab('easy')">簡易 (<span id="cnt-easy">0</span>)</button>
+  </div>
+
+  <div class="card">
+    <div id="statusBadge" class="status-badge badge-review">再次複習</div>
+    
+    <div class="word-container">
+      <button class="audio-btn-inline" onclick="playAudio()" title="播放發音">🔊</button>
+      <div id="word" class="word-title">---</div>
+    </div>
+
+    <button class="toggle-chinese-btn" onclick="toggleDetails()">✨ 點我看翻譯與例句</button>
+    
+    <div id="detailsBox" class="details-box">
+      <div id="meaning" class="pos-meaning"></div>
+      <div class="example-box">
+        <div id="exEn" class="ex-en"></div>
+        <div id="exZh" class="ex-zh"></div>
+      </div>
+    </div>
+
+    <div class="difficulty-group">
+      <button class="diff-btn btn-review" onclick="setDifficulty('review')">再次複習</button>
+      <button class="diff-btn btn-hard" onclick="setDifficulty('hard')">困難</button>
+      <button class="diff-btn btn-easy" onclick="setDifficulty('easy')">簡易</button>
+    </div>
+  </div>
+
+  <button class="nav-btn" onclick="nextCard()">下一張卡片 ➔</button>
+  <button class="reset-btn" onclick="resetProgress()">🔄 重置所有學習紀錄</button>
+</div>
+
+<script>
+  var vocabulary = [
+    { id: 1, word: "attire", meaning: "n. 服裝，衣著", exEn: "Professional business attire is required of all staff giving presentations.", exZh: "所有發表簡報的員工都必須穿著專業的商務服裝。", level: "review" },
+    { id: 2, word: "code", meaning: "n. 規範，慣例；密碼", exEn: "Employees are expected to follow the dress code.", exZh: "員工被期望能遵守服裝規範。", level: "review" },
+    { id: 3, word: "concern", meaning: "n. 擔心，憂慮 / v. 使～擔心；關係到", exEn: "The board voiced concerns about safety at the meeting.", exZh: "董事會在會議上說出了對於安全的憂慮。", level: "review" },
+    { id: 4, word: "policy", meaning: "n. 政策，規定；保單", exEn: "The employee benefit policy will be expanded next year.", exZh: "員工福利政策明年將會擴大。", level: "review" },
+    { id: 5, word: "comply", meaning: "v. 遵守，遵從", exEn: "Employees must comply with the regulations governing computer use.", exZh: "員工必須遵守與電腦使用相關的管理規定。", level: "review" },
+    { id: 6, word: "regulation", meaning: "n. 規定", exEn: "Regulations regarding lunch breaks were established.", exZh: "關於午休時間的規定已經建立了。", level: "review" },
+    { id: 7, word: "exception", meaning: "n. 例外", exEn: "Management decided not to make any exceptions to the rules.", exZh: "管理階層決定不讓這些規定有任何例外。", level: "review" },
+    { id: 8, word: "adhere", meaning: "v. 遵守；堅持", exEn: "All staff should do their best to adhere to the company's policies.", exZh: "所有員工都應該盡力遵守公司政策。", level: "review" },
+    { id: 9, word: "severely", meaning: "adv. 嚴厲地，嚴重地", exEn: "Those who share company data with outside parties will be severely punished.", exZh: "將公司資料分享給外部人士者，將受到嚴厲處罰。", level: "review" },
+    { id: 10, word: "refrain", meaning: "v. 克制；抑制", exEn: "Guards should refrain from making personal calls during a shift.", exZh: "警衛應該避免在值勤時打私人電話。", level: "review" },
+    { id: 11, word: "permission", meaning: "n. 允許，許可", exEn: "The CEO gave managers permission to hold a weekend workshop.", exZh: "執行長給了經理們舉辦週末工作坊的許可。", level: "review" },
+    { id: 12, word: "access", meaning: "n. 使用權，接近；通道", exEn: "Only authorized personnel may gain access to client files.", exZh: "只有經授權的員工才能取得客戶檔案的使用權。", level: "review" },
+    { id: 13, word: "thoroughly", meaning: "adv. 徹底地，完全地，非常", exEn: "Please read the user manual thoroughly before installing this software.", exZh: "安裝這個軟體之前，請仔細閱讀使用者手冊。", level: "review" },
+    { id: 14, word: "revise", meaning: "v. 修訂；變更（意見、計畫等）", exEn: "The office's policies regarding vacations have been revised.", exZh: "關於休假的辦公室政策已經修訂了。", level: "review" },
+    { id: 15, word: "approach", meaning: "n. 接近；處理方法", exEn: "The manager has a strict approach to enforcing office regulations.", exZh: "經理執行辦公室規定的方式很嚴格。", level: "review" },
+    { id: 16, word: "approval", meaning: "n. 批准，認可", exEn: "Please obtain the supervisor's approval before purchasing supplies.", exZh: "採購用品前請先獲得主管批准。", level: "review" },
+    { id: 17, word: "form", meaning: "n. 種類，類型；形式", exEn: "Visitors are required to present a form of identification to security guards.", exZh: "訪客必須向守衛人員出示一種身分證明。", level: "review" },
+    { id: 18, word: "immediately", meaning: "adv. 立即，馬上", exEn: "Effective immediately, taxes will be automatically deducted from each paycheck.", exZh: "稅金將從每次發放的薪資中自動扣除，此規定立即生效。", level: "review" },
+    { id: 19, word: "inspection", meaning: "n. 檢查，視察", exEn: "The facility inspection should be conducted at least once a month.", exZh: "設施檢查應該至少每月進行一次。", level: "review" },
+    { id: 20, word: "arrangement", meaning: "n. 安排，準備；佈置", exEn: "The manager made arrangements for purchase of new machinery.", exZh: "經理為新機器採購做了安排。", level: "review" },
+    { id: 21, word: "procedure", meaning: "n. 手續，程序", exEn: "The procedure for patent applications is outlined on the APTO Web site.", exZh: "APTO 網站上大略敘述了申請專利的手續。", level: "review" },
+    { id: 22, word: "negative", meaning: "adj. 負面的，消極的", exEn: "The new vacation policy received negative feedback from the employees.", exZh: "新的休假政策得到了員工的負面回應。", level: "review" },
+    { id: 23, word: "mandate", meaning: "v. 使～成為必須；授權給 / n. 授權，命令", exEn: "The board of directors has mandated an increase for research funding.", exZh: "董事會下令增加研究資金。", level: "review" },
+    { id: 24, word: "effect", meaning: "n.（法律等的）效力；效果；影響 / v. 造成", exEn: "The incentive policy will be in effect starting next week.", exZh: "獎勵金制度將從下週開始生效。", level: "review" },
+    { id: 25, word: "drastically", meaning: "adv. 激烈地；大幅地；徹底地", exEn: "Fines for breaking rules have been drastically increased.", exZh: "違反規則的罰金已經大幅增加了。", level: "review" },
+    { id: 26, word: "according to", meaning: "phr. 根據～，依照～", exEn: "All transactions must be handled according to the guidelines.", exZh: "所有交易都必須依照指導方針處理。", level: "review" },
+    { id: 27, word: "enable", meaning: "v. 使（某人）能夠（做某事）", exEn: "Jenny's promotion enabled her to participate in the board meeting.", exZh: "升職使 Jenny 能夠參加董事會議。", level: "review" },
+    { id: 28, word: "standard", meaning: "n. 標準；規範", exEn: "The company must make changes to the current safety standards.", exZh: "那間公司必須改變目前的安全規範。", level: "review" },
+    { id: 29, word: "constant", meaning: "adj. 持續的，不斷的", exEn: "The store received constant inquiries about its new return policy.", exZh: "這間商店一直收到關於新退貨政策的詢問。", level: "review" },
+    { id: 30, word: "act", meaning: "n. 法案，法令；行為 / v. 擔當", exEn: "The new act makes it easier to file personal income tax forms online.", exZh: "新法規使線上申報個人所得稅變得更容易。", level: "review" },
+    { id: 31, word: "compensation", meaning: "n. 補償（金）；報償", exEn: "Employees will receive compensation based on their performance and evaluation.", exZh: "員工會得到根據績效和評價而定的報償。", level: "review" },
+    { id: 32, word: "ban", meaning: "n. 禁止；禁令 / v. 禁止", exEn: "The government placed a ban on carrying a large volume of liquid on board a plane.", exZh: "政府禁止攜帶大量液體登機。", level: "review" },
+    { id: 33, word: "obligation", meaning: "n. 義務，責任", exEn: "All researchers have an obligation to publish at least one paper every year.", exZh: "所有研究人員都有每年至少發表一篇論文的義務。", level: "review" },
+    { id: 34, word: "authorize", meaning: "v. 批准～，授權（某人）做某事", exEn: "Allocations of funds must be authorized by management.", exZh: "資金分配必須經過經營團隊批准。", level: "review" },
+    { id: 35, word: "prohibit", meaning: "v. 禁止", exEn: "The museum prohibits visitors from taking pictures.", exZh: "這間博物館禁止參觀者拍照。", level: "review" },
+    { id: 36, word: "abolish", meaning: "v. 廢除（制度、法律等）", exEn: "Congress decided to abolish taxes on imported fruit.", exZh: "議會決定廢除對進口水果的課稅。", level: "review" },
+    { id: 37, word: "enforce", meaning: "v. 執行，實施（法律等）", exEn: "All departments must enforce the no smoking policy.", exZh: "所有部門都必須落實無菸政策。", level: "review" },
+    { id: 38, word: "habit", meaning: "n. 習慣", exEn: "Setting goals should be a regular habit.", exZh: "設定目標應該成為一種一般習慣。", level: "review" },
+    { id: 39, word: "legislation", meaning: "n. 立法；法律，法規", exEn: "The committee unanimously voted for the new export limitation legislation.", exZh: "委員會全體一致投票通過新的出口限制法規。", level: "review" },
+    { id: 40, word: "restrict", meaning: "v. 限制，限定", exEn: "Access is restricted to authorized personnel.", exZh: "進入的權利僅限於得到授權的人員。", level: "review" }
+  ];
+
+  var currentFilter = 'all';
+  var filteredList = [];
+  var currentIndex = 0;
+
+  function loadProgress() {
+    var saved = localStorage.getItem('toeic_vocab_levels');
+    if (saved) {
+      try {
+        var savedLevels = JSON.parse(saved);
+        for (var i = 0; i < vocabulary.length; i++) {
+          if (savedLevels[vocabulary[i].id]) {
+            vocabulary[i].level = savedLevels[vocabulary[i].id];
+          }
+        }
+      } catch (e) {}
+    }
+  }
+
+  function saveProgress() {
+    var savedLevels = {};
+    for (var i = 0; i < vocabulary.length; i++) {
+      savedLevels[vocabulary[i].id] = vocabulary[i].level;
+    }
+    localStorage.setItem('toeic_vocab_levels', JSON.stringify(savedLevels));
+  }
+
+  function resetProgress() {
+    if (confirm("確定要重置所有單字的學習分類嗎？")) {
+      localStorage.removeItem('toeic_vocab_levels');
+      for (var i = 0; i < vocabulary.length; i++) {
+        vocabulary[i].level = 'review';
+      }
+      updateCounts();
+      applyFilter();
+    }
+  }
+
+  function toggleAutoPlayText() {
+    var chk = document.getElementById('autoPlayToggle');
+    document.getElementById('toggleText').innerText = chk.checked ? "自動播放" : "手動點擊";
+  }
+
+  function updateCounts() {
+    document.getElementById('cnt-all').innerText = vocabulary.length;
+    var rev = 0, hrd = 0, esy = 0;
+    for (var i = 0; i < vocabulary.length; i++) {
+      if (vocabulary[i].level === 'review') rev++;
+      else if (vocabulary[i].level === 'hard') hrd++;
+      else if (vocabulary[i].level === 'easy') esy++;
+    }
+    document.getElementById('cnt-review').innerText = rev;
+    document.getElementById('cnt-hard').innerText = hrd;
+    document.getElementById('cnt-easy').innerText = esy;
+  }
+
+  function selectTab(level) {
+    currentFilter = level;
+    document.getElementById('tab-all').className = 'tab-btn' + (level === 'all' ? ' active' : '');
+    document.getElementById('tab-review').className = 'tab-btn' + (level === 'review' ? ' active' : '');
+    document.getElementById('tab-hard').className = 'tab-btn' + (level === 'hard' ? ' active' : '');
+    document.getElementById('tab-easy').className = 'tab-btn' + (level === 'easy' ? ' active' : '');
+    applyFilter();
+  }
+
+  function applyFilter() {
+    filteredList = [];
+    if (currentFilter === 'all') {
+      for (var i = 0; i < vocabulary.length; i++) {
+        filteredList.push(vocabulary[i]);
+      }
+    } else {
+      for (var j = 0; j < vocabulary.length; j++) {
+        if (vocabulary[j].level === currentFilter) {
+          filteredList.push(vocabulary[j]);
+        }
+      }
+    }
+    currentIndex = 0;
+    renderCard();
+  }
+
+  function renderCard() {
+    document.getElementById('detailsBox').style.display = 'none';
+
+    if (filteredList.length === 0) {
+      document.getElementById('word').innerText = "無單字";
+      document.getElementById('statusBadge').innerText = "空";
+      document.getElementById('meaning').innerText = "";
+      document.getElementById('exEn').innerText = "";
+      document.getElementById('exZh').innerText = "";
+      return;
+    }
+
+    var data = filteredList[currentIndex];
+    document.getElementById('word').innerText = data.word;
+    document.getElementById('meaning').innerText = data.meaning;
+    document.getElementById('exEn').innerText = data.exEn;
+    document.getElementById('exZh').innerText = data.exZh;
+
+    var badge = document.getElementById('statusBadge');
+    if (data.level === 'easy') {
+      badge.innerText = "簡易"; badge.className = "status-badge badge-easy";
+    } else if (data.level === 'hard') {
+      badge.innerText = "困難"; badge.className = "status-badge badge-hard";
+    } else {
+      badge.innerText = "再次複習"; badge.className = "status-badge badge-review";
+    }
+
+    if (document.getElementById('autoPlayToggle').checked) {
+      playAudio();
+    }
+  }
+
+  function playAudio() {
+    if (filteredList.length === 0) return;
+    try {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        var word = filteredList[currentIndex].word;
+        var utterance = new SpeechSynthesisUtterance(word);
+        utterance.lang = 'en-US';
+        utterance.rate = 0.9;
+        window.speechSynthesis.speak(utterance);
+      }
+    } catch(e) {}
+  }
+
+  function toggleDetails() {
+    if (filteredList.length === 0) return;
+    var box = document.getElementById('detailsBox');
+    box.style.display = (box.style.display === 'none' || box.style.display === '') ? 'block' : 'none';
+  }
+
+  function setDifficulty(level) {
+    if (filteredList.length === 0) return;
+    var currentId = filteredList[currentIndex].id;
+    for (var i = 0; i < vocabulary.length; i++) {
+      if (vocabulary[i].id === currentId) {
+        vocabulary[i].level = level;
+        break;
+      }
+    }
+    
+    saveProgress();
+    updateCounts();
+    
+    if (currentFilter !== 'all') {
+      applyFilter();
+    } else {
+      renderCard();
+    }
+  }
+
+  function nextCard() {
+    if (filteredList.length === 0) return;
+    currentIndex = (currentIndex + 1) % filteredList.length; // 修正此處，確保正確切換到下一張
+    renderCard();
+  }
+
+  function startApp() {
+    loadProgress();
+    updateCounts();
+    applyFilter();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startApp);
+  } else {
+    startApp();
+  }
+</script>
+
+</body>
+</html>
